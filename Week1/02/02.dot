@@ -1,0 +1,27 @@
+digraph {
+	compound = "true"
+	newrank = "true"
+	subgraph "root" {
+		"[root] aws_instance.ubuntu-apache (expand)" [label = "aws_instance.ubuntu-apache", shape = "box"]
+		"[root] aws_security_group.ubuntu-apache-sg (expand)" [label = "aws_security_group.ubuntu-apache-sg", shape = "box"]
+		"[root] data.aws_ami.ubuntu_latest (expand)" [label = "data.aws_ami.ubuntu_latest", shape = "box"]
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" [label = "provider[\"registry.terraform.io/hashicorp/aws\"]", shape = "diamond"]
+		"[root] var.instance_type" [label = "var.instance_type", shape = "note"]
+		"[root] var.key-pair" [label = "var.key-pair", shape = "note"]
+		"[root] var.namespace" [label = "var.namespace", shape = "note"]
+		"[root] var.region" [label = "var.region", shape = "note"]
+		"[root] aws_instance.ubuntu-apache (expand)" -> "[root] aws_security_group.ubuntu-apache-sg (expand)"
+		"[root] aws_instance.ubuntu-apache (expand)" -> "[root] data.aws_ami.ubuntu_latest (expand)"
+		"[root] aws_instance.ubuntu-apache (expand)" -> "[root] var.instance_type"
+		"[root] aws_instance.ubuntu-apache (expand)" -> "[root] var.key-pair"
+		"[root] aws_security_group.ubuntu-apache-sg (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
+		"[root] aws_security_group.ubuntu-apache-sg (expand)" -> "[root] var.namespace"
+		"[root] data.aws_ami.ubuntu_latest (expand)" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"]"
+		"[root] output.ubuntu_apache_ip (expand)" -> "[root] aws_instance.ubuntu-apache (expand)"
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)" -> "[root] aws_instance.ubuntu-apache (expand)"
+		"[root] provider[\"registry.terraform.io/hashicorp/aws\"]" -> "[root] var.region"
+		"[root] root" -> "[root] output.ubuntu_apache_ip (expand)"
+		"[root] root" -> "[root] provider[\"registry.terraform.io/hashicorp/aws\"] (close)"
+	}
+}
+
