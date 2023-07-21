@@ -71,4 +71,5 @@ override.tf.json
 .terraformrc
 terraform.rc
 .infracost/*
+**/terraform.pem
 # End of https://www.toptal.com/developers/gitignore/api/terraform,macos
