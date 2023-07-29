@@ -62,6 +62,102 @@ State에는 작업자가 정의한 코드와 실제 반영된 프로비저닝 �
 
 ### AWS DynamoDB/S3를 원격 저장소로 사용하기 <!-- omit in toc -->
 
+1. S3와 DynamoDB를 생성하는 `backend.tf` 파일을 생성합니다.
+   ```hcl
+   provider "aws" {
+     region = "ap-northeast-2"
+   }
+   
+   resource "aws_s3_bucket" "grilsbucket" {
+     bucket = lower("${var.namespace}-t101study-tfstate")
+   }
+   
+   resource "aws_s3_bucket_versioning" "grilbucket_versioning" {
+     bucket = aws_s3_bucket.grilsbucket.id
+     versioning_configuration {
+       status = "Enabled"
+     }
+   }
+   
+   output "s3_bucket_arn" {
+     value       = aws_s3_bucket.grilsbucket.arn
+     description = "The ARN of the S3 bucket"
+   }
+   
+   resource "aws_dynamodb_table" "grildynamodbtable" {
+     name         = "terraform-locks"
+     billing_mode = "PAY_PER_REQUEST"
+     hash_key     = "LockID"
+   
+     attribute {
+       name = "LockID"
+       type = "S"
+     }
+   }
+   
+   output "dynamodb_table_name" {
+     value       = aws_dynamodb_table.grildynamodbtable.name
+     description = "The name of the DynamoDB table"
+   }
+   ```
+
+2. `dev` 디렉터리를 생성하고 이전에 생성한 S3와 DynamoDB를 사용하여 Backend를 설정하는 `backend.tf`를 만듭니다.
+   ```hcl
+   provider "aws" {
+     region = "ap-northeast-2"
+   }
+   
+   terraform {
+     backend "s3" {
+       bucket = "gril-t101study-tfstate"
+       key    = "dev/terraform.tfstate"
+       region = "ap-northeast-2"
+       dynamodb_table = "terraform-locks"
+       # encrypt        = true
+     }
+   }
+   ```
+
+3. `main.tf` 파일을 리소스를 생성합니다.
+
+   ```hcl
+   resource "aws_vpc" "dev_grilvpc" {
+     cidr_block       = "10.20.0.0/16"
+     enable_dns_support   = true
+     enable_dns_hostnames = true
+   
+     tags = {
+       Name = "dev_t101-study"
+     }
+   }
+   
+   resource "aws_subnet" "dev_grilsubnet1" {
+     vpc_id     = aws_vpc.dev_grilvpc.id
+     cidr_block = "10.20.1.0/24"
+   
+     availability_zone = "ap-northeast-2a"
+   
+     tags = {
+       Name = "dev_t101-subnet1"
+     }
+   }
+   
+   resource "aws_subnet" "dev_grilsubnet2" {
+     vpc_id     = aws_vpc.dev_grilvpc.id
+     cidr_block = "10.20.2.0/24"
+   
+     availability_zone = "ap-northeast-2c"
+   
+     tags = {
+       Name = "dev_t101-subnet2"
+     }
+   }
+   ```
+
+4. 배포하여 DynamoDB와 S3에 상태를 저장되는 걸 확인 합니다.  
+
+   ![DynamoDB](./image/01-01.png)
+
 ## 도전과제 2
 
 ### 리소스를 모듈화 하고 해당 모듈을 사용해서 반복 리소스 만들기 <!-- omit in toc -->
