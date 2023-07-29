@@ -235,8 +235,8 @@ State에는 작업자가 정의한 코드와 실제 반영된 프로비저닝 �
    module.s3_bucket_module["gril-terraform101-module-bucket2"].aws_s3_bucket_public_access_block.gril_bucket_public
    ```
 
-   ![bucket1](./images/02-01.png)
-   ![bucket2](./images/02-02.png)
+   ![bucket1](./image/02-01.png)
+   ![bucket2](./image/02-02.png)
 
 ## 도전과제 3
 
@@ -279,7 +279,7 @@ Terraform Rgistery에 공개된 [VPC 모듈](https://registry.terraform.io/modul
 
 2. `main.tf` 파일을 생성하고 아래 내용을 추가합니다.
 
-  ```hcl
+   ```hcl
    module "vpc" {
      # 사용할 모듈을 지정
      source = "terraform-aws-modules/vpc/aws"
@@ -307,46 +307,105 @@ Terraform Rgistery에 공개된 [VPC 모듈](https://registry.terraform.io/modul
      tags = var.vpc_tag
    
    }
-  ```
+   ```
 
-1. 배포하여 생성된 리소를 확인합니다.
+3. 배포하여 생성된 리소를 확인합니다.
 
-  ```bash
-   Apply complete! Resources: 25 added, 0 changed, 0 destroyed.
+   ```bash
+    Apply complete! Resources: 25 added, 0 changed, 0 destroyed.
+ 
+    $ terraform state list
+    data.aws_security_group.default
+    module.vpc.aws_default_network_acl.this[0]
+    module.vpc.aws_default_route_table.default[0]
+    module.vpc.aws_default_security_group.this[0]
+    module.vpc.aws_eip.nat[0]
+    module.vpc.aws_internet_gateway.this[0]
+    module.vpc.aws_nat_gateway.this[0]
+    module.vpc.aws_route.private_nat_gateway[0]
+    module.vpc.aws_route.public_internet_gateway[0]
+    module.vpc.aws_route_table.private[0]
+    module.vpc.aws_route_table.public[0]
+    module.vpc.aws_route_table_association.private[0]
+    module.vpc.aws_route_table_association.private[1]
+    module.vpc.aws_route_table_association.private[2]
+    module.vpc.aws_route_table_association.public[0]
+    module.vpc.aws_route_table_association.public[1]
+    module.vpc.aws_route_table_association.public[2]
+    module.vpc.aws_subnet.private[0]
+    module.vpc.aws_subnet.private[1]
+    module.vpc.aws_subnet.private[2]
+    module.vpc.aws_subnet.public[0]
+    module.vpc.aws_subnet.public[1]
+    module.vpc.aws_subnet.public[2]
+    module.vpc.aws_vpc.this[0]
+    module.vpc.aws_vpc_dhcp_options.this[0]
+    module.vpc.aws_vpc_dhcp_options_association.this[0]
+   ```
 
-   $ terraform state list
-   data.aws_security_group.default
-   module.vpc.aws_default_network_acl.this[0]
-   module.vpc.aws_default_route_table.default[0]
-   module.vpc.aws_default_security_group.this[0]
-   module.vpc.aws_eip.nat[0]
-   module.vpc.aws_internet_gateway.this[0]
-   module.vpc.aws_nat_gateway.this[0]
-   module.vpc.aws_route.private_nat_gateway[0]
-   module.vpc.aws_route.public_internet_gateway[0]
-   module.vpc.aws_route_table.private[0]
-   module.vpc.aws_route_table.public[0]
-   module.vpc.aws_route_table_association.private[0]
-   module.vpc.aws_route_table_association.private[1]
-   module.vpc.aws_route_table_association.private[2]
-   module.vpc.aws_route_table_association.public[0]
-   module.vpc.aws_route_table_association.public[1]
-   module.vpc.aws_route_table_association.public[2]
-   module.vpc.aws_subnet.private[0]
-   module.vpc.aws_subnet.private[1]
-   module.vpc.aws_subnet.private[2]
-   module.vpc.aws_subnet.public[0]
-   module.vpc.aws_subnet.public[1]
-   module.vpc.aws_subnet.public[2]
-   module.vpc.aws_vpc.this[0]
-   module.vpc.aws_vpc_dhcp_options.this[0]
-   module.vpc.aws_vpc_dhcp_options_association.this[0]
-  ```
-
-   ![vpc](./images/03-01.png)
-   ![subnet](./images/03-02.png)
-   ![natgateway](./images/03-03.png)
+   ![vpc](./image/03-01.png)
+   ![subnet](./image/03-02.png)
+   ![natgateway](./image/03-03.png)
 
 ## 도전과제 4
 
 ### 깃허브를 모듈 소스로 설정하여 리소스 배포하기 <!-- omit in toc -->
+
+도전과제2에서 만든 모듈을 GitHub에 업로드한 후 [업로드한 모듈](https://github.com/Gril-J/Terraform-101-Study/Week4/02/modules)로 리소스를 배포해 보겠습니다.
+
+1. `variable.tf` 파일을 생성하고 모듈에서 사용할 변수들을 추가합니다.
+
+   ```hcl
+   variable "bucket_name"{
+       description = "S3 Bucket Name"
+       type = list(string)
+       default = ["gril-github-module-bucket1", "gril-github-module-bucket2"]
+   }
+   ```
+
+2. `main.tf` 파일을 생성하고 아래 내용을 추가합니다.
+
+   ```hcl
+   terraform {
+     required_providers {
+       aws = {
+         source  = "hashicorp/aws"
+         version = "~> 4.3"
+       }
+     }
+   }
+   
+   provider "aws" {
+     region = "ap-northeast-2"
+   }
+   # 도전 과제2에서 만든 모듈을 GitHub에 업로드한 후 source 속성에 경로를 추가합니다.
+   module "github_module_s3t" {
+     for_each = toset(var.bucket_name)
+     source = "github.com/Gril-J/Terraform-101-Study/Week4/02/modules/s3_public" 
+     bucket_name = each.value
+     ignore_policy = false
+     public_policy = false
+     block_acl = false
+     restrict_public = false
+   }
+   ```
+
+3. 배포하여 리소스를 생성합니다.
+
+   ```bash
+   Apply complete! Resources: 2 added, 0 changed, 0 destroyed.
+   $ terraform state list
+   module.github_module_s3t["gril-github-module-bucket1"].data.aws_iam_policy_document.public_s3_policy
+   module.github_module_s3t["gril-github-module-bucket1"].aws_s3_bucket.gril_bucket
+   module.github_module_s3t["gril-github-module-bucket1"].aws_s3_bucket_ownership_controls.bucket_ownershop
+   module.github_module_s3t["gril-github-module-bucket1"].aws_s3_bucket_policy.public_policy
+   module.github_module_s3t["gril-github-module-bucket1"].aws_s3_bucket_public_access_block.gril_bucket_public
+   module.github_module_s3t["gril-github-module-bucket2"].data.aws_iam_policy_document.public_s3_policy
+   module.github_module_s3t["gril-github-module-bucket2"].aws_s3_bucket.gril_bucket
+   module.github_module_s3t["gril-github-module-bucket2"].aws_s3_bucket_ownership_controls.bucket_ownershop
+   module.github_module_s3t["gril-github-module-bucket2"].aws_s3_bucket_policy.public_policy
+   module.github_module_s3t["gril-github-module-bucket2"].aws_s3_bucket_public_access_block.gril_bucket_public
+   ```
+
+    ![bucket1](./image/04-01.png)
+    ![bucket2](./image/04-02.png)
